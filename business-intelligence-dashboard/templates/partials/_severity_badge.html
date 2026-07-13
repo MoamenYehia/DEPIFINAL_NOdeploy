@@ -1,0 +1,14 @@
+{# Expects `severity` string: Critical / Warning / Info / Success (aliases supported) #}
+{% set severity_key = severity|default('')|lower %}
+{% set styles = {
+  'critical': 'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
+  'high':     'bg-rose-50 text-rose-700 ring-1 ring-rose-200',
+  'warning':  'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+  'medium':   'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
+  'info':     'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+  'success':  'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+  'low':      'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+} %}
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ styles.get(severity_key, 'bg-gray-100 text-gray-600 ring-1 ring-gray-200') }}">
+  {{ severity }}
+</span>

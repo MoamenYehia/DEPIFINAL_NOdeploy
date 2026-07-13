@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Forecasts · BI Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <h1 class="text-xl font-semibold text-gray-900">Sales Forecast</h1>
+
+    <form method="get" action="{{ url_for('forecasts.index') }}" class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Time Range</label>
+        <select name="time_range" onchange="this.form.submit()"
+                class="rounded-lg border border-gray-200 text-sm px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+          {% for value, label in time_ranges %}
+          <option value="{{ value }}" {% if value == selected_time_range %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Region</label>
+        <select name="region" onchange="this.form.submit()"
+                class="rounded-lg border border-gray-200 text-sm px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+          {% for r in regions %}
+          <option value="{{ r }}" {% if r == selected_region %}selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="button"
+              class="rounded-lg bg-gray-900 text-white text-sm font-medium px-4 py-2.5 hover:bg-gray-800 transition-colors">
+        Export
+      </button>
+    </form>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 border-b border-gray-200">
+    <button class="px-4 py-2.5 text-sm font-medium text-gray-900 border-b-2 border-brand-600">Sales Forecast</button>
+  </div>
+
+  <!-- Large chart -->
+  <div class="card p-6">
+    <h3 class="text-sm font-semibold text-gray-900 mb-4">Sales Forecast</h3>
+    <div class="chart-box h-80"><canvas id="forecastChart"></canvas></div>
+    <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
+      <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-gray-300"></span>Actual</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-brand-500"></span>Forecast</span>
+    </div>
+  </div>
+
+  <!-- Forecast summary -->
+  <div class="card p-6">
+    <h3 class="text-sm font-semibold text-gray-900 mb-4">Forecast Summary</h3>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <p class="text-xs text-gray-500 mb-1">Total Forecasted Sales</p>
+        <p class="text-lg font-semibold text-gray-900">{{ forecast_summary.total_forecasted_sales }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 mb-1">Expected Growth</p>
+        <p class="text-lg font-semibold text-gray-900">{{ forecast_summary.expected_growth }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 mb-1">Top Performing Region</p>
+        <p class="text-lg font-semibold text-gray-900">{{ forecast_summary.top_performing_region }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 mb-1">Lowest Performing Region</p>
+        <p class="text-lg font-semibold text-gray-900">{{ forecast_summary.lowest_performing_region }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  new Chart(document.getElementById('forecastChart'), {
+    type: 'line',
+    data: {
+      labels: {{ forecast_chart.labels | tojson }},
+      datasets: [
+        {
+          label: 'Actual',
+          data: {{ forecast_chart.actual | tojson }},
+          borderColor: '#d1d5db',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.35,
+        },
+        {
+          label: 'Forecast',
+          data: {{ forecast_chart.forecast | tojson }},
+          borderColor: '#3b66f5',
+          backgroundColor: 'rgba(59, 102, 245, 0.08)',
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          tension: 0.35,
+          fill: true,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 11 } } },
+        y: { grid: { color: '#f3f4f6' }, ticks: { color: '#9ca3af', font: { size: 11 } } },
+      }
+    }
+  });
+</script>
+{% endblock %}

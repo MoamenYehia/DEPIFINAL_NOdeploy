@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Data Upload · BI Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-5xl">
+  <div>
+    <h1 class="text-xl font-semibold text-gray-900">Upload Data</h1>
+    <p class="text-sm text-gray-500 mt-1">Upload your CSV files or connect to your SQL database.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <!-- Upload CSV File -->
+    <div class="card p-6">
+      <h3 class="text-sm font-semibold text-gray-900 mb-4">Upload CSV File</h3>
+      {% if upload_result %}
+      <div class="mb-4 rounded-lg border px-4 py-3 text-sm
+                  {% if upload_result.level == 'success' %} border-emerald-200 bg-emerald-50 text-emerald-700 {% else %} border-rose-200 bg-rose-50 text-rose-700 {% endif %}">
+        <p class="font-medium">{{ upload_result.title }}</p>
+        <p class="mt-0.5">{{ upload_result.message }}</p>
+      </div>
+      {% endif %}
+      <form id="csvUploadForm" action="{{ url_for('data_upload.submit') }}" method="post" enctype="multipart/form-data" class="space-y-4">
+        <label id="dropZone"
+               class="flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-xl py-10 px-4 cursor-pointer hover:border-brand-400 hover:bg-brand-50/30 transition-colors">
+          <svg class="h-9 w-9 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 7.5L12 3m0 0L7.5 7.5M12 3v13.5" />
+          </svg>
+          <p class="text-sm font-medium text-gray-700">Drag and drop your file here</p>
+          <p class="text-xs text-gray-400 mt-0.5">or click to browse</p>
+          <input id="csvFileInput" name="csv_file" type="file" accept=".csv" class="hidden" required>
+          <span id="fileNameLabel" class="mt-3 text-xs text-brand-600 font-medium hidden"></span>
+        </label>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" id="browseBtn"
+                  class="flex-1 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium py-2.5 hover:bg-gray-50 transition-colors">
+            Browse Files
+          </button>
+          <button type="submit"
+                  class="flex-1 rounded-lg bg-brand-600 text-white text-sm font-medium py-2.5 hover:bg-brand-700 transition-colors">
+            Submit &amp; Process
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Connect SQL Database -->
+    <div class="card p-6">
+      <h3 class="text-sm font-semibold text-gray-900 mb-4">Connect SQL Database</h3>
+      {% if connection_result %}
+      <div class="mb-4 rounded-lg border px-4 py-3 text-sm
+                  {% if connection_result.level == 'success' %} border-emerald-200 bg-emerald-50 text-emerald-700 {% else %} border-rose-200 bg-rose-50 text-rose-700 {% endif %}">
+        <p class="font-medium">{{ connection_result.title }}</p>
+        <p class="mt-0.5">{{ connection_result.message }}</p>
+      </div>
+      {% endif %}
+      <div class="flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-xl py-10 px-4">
+        <svg class="h-9 w-9 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <ellipse cx="12" cy="6" rx="8" ry="3" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6v12c0 1.66 3.58 3 8 3s8-1.34 8-3V6M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" />
+        </svg>
+        <p class="text-sm font-medium text-gray-700">Securely connect and import</p>
+        <p class="text-xs text-gray-400 mt-0.5">data from your database</p>
+      </div>
+
+      <form id="sqlForm" action="{{ url_for('data_upload.connect') }}" method="post" class="mt-4 space-y-3">
+        <!-- Credential fields (collapsed by default; shown when "Connect" is pressed) -->
+        <div id="sqlFields" class="hidden space-y-3">
+          <input name="host" type="text" placeholder="Host" class="w-full rounded-lg border border-gray-200 text-sm px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+          <div class="grid grid-cols-2 gap-3">
+            <input name="database" type="text" placeholder="Database" class="w-full rounded-lg border border-gray-200 text-sm px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+            <input name="port" type="text" placeholder="Port" class="w-full rounded-lg border border-gray-200 text-sm px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <input name="username" type="text" placeholder="Username" class="w-full rounded-lg border border-gray-200 text-sm px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+            <input name="password" type="password" placeholder="Password" class="w-full rounded-lg border border-gray-200 text-sm px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button type="button" id="connectBtn"
+                  class="flex-1 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium py-2.5 hover:bg-gray-50 transition-colors">
+            Show Connection Fields
+          </button>
+          <button type="submit"
+                  class="flex-1 rounded-lg bg-gray-900 text-white text-sm font-medium py-2.5 hover:bg-gray-800 transition-colors">
+            Connect
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Processing Status -->
+  <div class="card p-6">
+    <h3 class="text-sm font-semibold text-gray-900 mb-4">Processing Status</h3>
+    <ul class="divide-y divide-gray-100">
+      {% for step in processing_status %}
+      <li class="flex items-center justify-between py-3">
+        <div class="flex items-center gap-3">
+          <span class="h-5 w-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </span>
+          <p class="text-sm text-gray-700">{{ step.step }}</p>
+        </div>
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                     {% if step.status == 'Completed' %} bg-emerald-50 text-emerald-600 {% else %} bg-gray-100 text-gray-500 {% endif %}">
+          {{ step.status }}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div class="mt-4 flex justify-end">
+      <p class="text-xs text-gray-400">The CSV form above is wired to the ingestion endpoint. Keep this section for future SQL connector wiring.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('csvFileInput');
+  const browseBtn = document.getElementById('browseBtn');
+  const fileNameLabel = document.getElementById('fileNameLabel');
+
+  browseBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) {
+      fileNameLabel.textContent = fileInput.files[0].name;
+      fileNameLabel.classList.remove('hidden');
+    }
+  });
+
+  ['dragover', 'dragenter'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-brand-400', 'bg-brand-50/30');
+    });
+  });
+  ['dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-brand-400', 'bg-brand-50/30');
+    });
+  });
+  dropZone.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      fileNameLabel.textContent = e.dataTransfer.files[0].name;
+      fileNameLabel.classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('connectBtn').addEventListener('click', () => {
+    document.getElementById('sqlFields').classList.toggle('hidden');
+  });
+</script>
+{% endblock %}

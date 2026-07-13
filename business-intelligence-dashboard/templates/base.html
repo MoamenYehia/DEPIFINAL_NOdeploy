@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}BI Dashboard{% endblock %}</title>
+
+  <!-- Tailwind CSS (CDN build for prototyping; swap for a compiled build in production) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef4ff',
+              100: '#d9e6ff',
+              500: '#3b66f5',
+              600: '#2c52e0',
+              700: '#2440b3',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-[#f8f9fa] font-sans text-gray-900 antialiased">
+
+  <div id="mobileOverlay" class="fixed inset-0 z-40 hidden bg-gray-900/40 lg:hidden"></div>
+  <aside id="mobileSidebar" class="fixed inset-y-0 left-0 z-50 hidden w-72 max-w-[85vw] border-r border-gray-200 bg-white shadow-2xl lg:hidden">
+    <div class="h-16 flex items-center justify-between px-5 border-b border-gray-200">
+      <div class="px-3 py-1.5 rounded-md bg-gray-900 text-sm font-semibold tracking-wide text-white">BI</div>
+      <button type="button" id="closeMobileMenu" class="rounded-lg p-2 text-gray-500 hover:bg-gray-50" aria-label="Close menu">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      {% set nav_items = [
+        ('dashboard', 'dashboard.index', 'Dashboard', 'grid'),
+        ('insights', 'insights.index', 'Insights', 'lightbulb'),
+        ('forecasts', 'forecasts.index', 'Forecasts', 'trending'),
+        ('data_upload', 'data_upload.index', 'Data Upload', 'upload'),
+        ('reports', 'reports.index', 'Reports', 'doc'),
+        ('alerts', 'alerts.index', 'Alerts', 'bell'),
+        ('settings', 'settings.index', 'Settings', 'cog'),
+      ] %}
+      {% for key, endpoint, label, icon in nav_items %}
+      <a href="{{ url_for(endpoint) }}"
+         class="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                {% if active_page == key %} bg-brand-50 text-brand-700 {% else %} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {% endif %}">
+        {% include 'partials/_icon.html' with context %}
+        <span>{{ label }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+  </aside>
+
+  <div class="min-h-full flex">
+
+    <!-- ============ Sidebar (desktop) ============ -->
+    <aside class="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-gray-200 bg-white/95 backdrop-blur shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+      <div class="h-16 flex items-center px-6 border-b border-gray-200">
+        <div class="px-3 py-1.5 rounded-md bg-gray-900 text-sm font-semibold tracking-wide text-white">BI</div>
+      </div>
+
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {% set nav_items = [
+          ('dashboard', 'dashboard.index', 'Dashboard', 'grid'),
+          ('insights', 'insights.index', 'Insights', 'lightbulb'),
+          ('forecasts', 'forecasts.index', 'Forecasts', 'trending'),
+          ('data_upload', 'data_upload.index', 'Data Upload', 'upload'),
+          ('reports', 'reports.index', 'Reports', 'doc'),
+          ('alerts', 'alerts.index', 'Alerts', 'bell'),
+          ('settings', 'settings.index', 'Settings', 'cog'),
+        ] %}
+        {% for key, endpoint, label, icon in nav_items %}
+        <a href="{{ url_for(endpoint) }}"
+           class="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                  {% if active_page == key %} bg-brand-50 text-brand-700 {% else %} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {% endif %}">
+          {% include 'partials/_icon.html' with context %}
+          <span>{{ label }}</span>
+        </a>
+        {% endfor %}
+      </nav>
+
+      <!-- User profile section -->
+      <div class="border-t border-gray-200 p-4">
+        <a href="{{ url_for('settings.index') }}" class="flex items-center gap-3 group">
+          <div class="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
+            {{ (user.name[0] if user else 'A') }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-gray-900 truncate">{{ user.name if user else 'Admin User' }}</p>
+            <p class="text-xs text-gray-500 truncate">{{ user.email if user else 'admin@domain.com' }}</p>
+          </div>
+          <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ============ Main column ============ -->
+    <div class="flex-1 flex flex-col lg:pl-64">
+
+      <!-- ============ Top header ============ -->
+      <header class="sticky top-0 z-30 h-16 bg-white/90 backdrop-blur border-b border-gray-200 flex items-center gap-4 px-4 sm:px-6 shadow-[0_1px_0_rgba(0,0,0,0.02)]">
+        <!-- Mobile menu / logo -->
+        <button type="button" id="openMobileMenu" class="lg:hidden text-gray-500" aria-label="Open menu">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        <!-- Page summary -->
+        <div class="hidden md:block flex-1 min-w-0">
+          <p class="text-xs font-medium uppercase tracking-[0.18em] text-gray-400">Business Intelligence</p>
+          <p class="truncate text-sm text-gray-500">
+            {% if active_page == 'dashboard' %}Overview and operational summary
+            {% elif active_page == 'insights' %}AI-generated insights and anomaly explanations
+            {% elif active_page == 'forecasts' %}Forecast monitoring and trend review
+            {% elif active_page == 'data_upload' %}Data ingestion and source connectivity
+            {% elif active_page == 'reports' %}Reporting workspace and exports
+            {% elif active_page == 'alerts' %}Alert triage and anomaly review
+            {% elif active_page == 'settings' %}Workspace and profile preferences
+            {% else %}Operational BI workspace{% endif %}
+          </p>
+        </div>
+
+        <div class="flex-1 md:flex-none"></div>
+
+        <!-- Notifications -->
+        <button type="button" class="relative p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-50" aria-label="Notifications">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0m6 0H9" />
+          </svg>
+          <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
+        </button>
+
+        <!-- Avatar -->
+        <button type="button" class="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600" aria-label="Profile">
+          {{ (user.name[0] if user else 'A') }}
+        </button>
+      </header>
+
+      <!-- ============ Page content ============ -->
+      <main class="flex-1 px-4 sm:px-6 py-6 pb-24 lg:pb-6">
+        <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">{% if active_page %}{{ active_page.replace('_', ' ') | title }}{% else %}Overview{% endif %}</p>
+            {% if user %}
+            <p class="mt-1 text-sm text-gray-500">Signed in as {{ user.name }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ Mobile bottom nav ============ -->
+  <nav class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200">
+    <div class="grid grid-cols-5">
+      {% set mobile_items = [
+        ('dashboard', 'dashboard.index', 'Dashboard', 'grid'),
+        ('insights', 'insights.index', 'Insights', 'lightbulb'),
+        ('forecasts', 'forecasts.index', 'Forecasts', 'trending'),
+        ('alerts', 'alerts.index', 'Alerts', 'bell'),
+      ] %}
+      {% for key, endpoint, label, icon in mobile_items %}
+      <a href="{{ url_for(endpoint) }}"
+         class="flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] font-medium
+                {% if active_page == key %} text-brand-600 {% else %} text-gray-500 {% endif %}">
+        {% include 'partials/_icon.html' with context %}
+        <span>{{ label }}</span>
+      </a>
+      {% endfor %}
+      <a href="{{ url_for('settings.index') }}"
+         class="flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] font-medium text-gray-500">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+        </svg>
+        <span>More</span>
+      </a>
+    </div>
+  </nav>
+
+  <script>
+    const openMobileMenu = document.getElementById('openMobileMenu');
+    const closeMobileMenu = document.getElementById('closeMobileMenu');
+    const mobileSidebar = document.getElementById('mobileSidebar');
+    const mobileOverlay = document.getElementById('mobileOverlay');
+
+    function showMobileMenu() {
+      mobileSidebar.classList.remove('hidden');
+      mobileOverlay.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function hideMobileMenu() {
+      mobileSidebar.classList.add('hidden');
+      mobileOverlay.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    if (openMobileMenu) openMobileMenu.addEventListener('click', showMobileMenu);
+    if (closeMobileMenu) closeMobileMenu.addEventListener('click', hideMobileMenu);
+    if (mobileOverlay) mobileOverlay.addEventListener('click', hideMobileMenu);
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
